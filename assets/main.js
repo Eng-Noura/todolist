@@ -19,6 +19,15 @@ let InputValue = "";
 let currentFilter = "all"; // all | active | completed
 let dragId = null;
 let kittenBg = localStorage.getItem("todoKittenBg") === "1";
+const KITTEN_BGS = [
+  { file: "kitten-bg-1.jpg", pos: "75% top" },
+  { file: "kitten-bg-2.jpg", pos: "75% top" },
+  { file: "kitten-bg-3.jpg", pos: "75% top" },
+  { file: "kitten-bg-4.jpg", pos: "80% top" },
+];
+let kittenIdx =
+  (parseInt(localStorage.getItem("todoKittenIdx"), 10) || 0) % KITTEN_BGS.length;
+let kittenClickTimer = null;
 let sortDir = localStorage.getItem("todoSortDir") || "newest"; // newest | oldest
 
 // Initialize app
@@ -26,6 +35,7 @@ let sortDir = localStorage.getItem("todoSortDir") || "newest"; // newest | oldes
   loadTasks();
   filterAll.classList.add("active-filter");
   updateSortBtn();
+  KITTEN_BGS.forEach((b) => (new Image().src = "./images/" + b.file)); // preload
   applyBackground();
   render();
   // refresh deadline colours (soon / overdue) every minute
@@ -344,6 +354,14 @@ function setActiveFilter(activeEl) {
 function applyBackground() {
   const light = document.body.classList.contains("light-mode");
   topBg.className = kittenBg ? "bgKitten" : light ? "bgLight" : "bgDark";
+  if (kittenBg) {
+    const b = KITTEN_BGS[kittenIdx];
+    topBg.style.backgroundImage = "url('./images/" + b.file + "')";
+    topBg.style.backgroundPosition = b.pos;
+  } else {
+    topBg.style.backgroundImage = "";
+    topBg.style.backgroundPosition = "";
+  }
   kittenBtn.classList.toggle("active", kittenBg);
 }
 
@@ -358,9 +376,29 @@ themeToggle.addEventListener("click", function () {
   applyBackground();
 });
 
-// Kittens background on/off (remembered)
-kittenBtn.addEventListener("click", () => {
-  kittenBg = !kittenBg;
+// Kitten button:
+//   double-click -> kittens background (double-click again = next kitten image)
+//   single click -> back to the original background
+function saveKittenState() {
   localStorage.setItem("todoKittenBg", kittenBg ? "1" : "0");
+  localStorage.setItem("todoKittenIdx", String(kittenIdx));
+}
+
+kittenBtn.addEventListener("click", () => {
+  clearTimeout(kittenClickTimer);
+  // wait a moment so a double-click is not treated as a single click
+  kittenClickTimer = setTimeout(() => {
+    if (!kittenBg) return;
+    kittenBg = false;
+    saveKittenState();
+    applyBackground();
+  }, 350);
+});
+
+kittenBtn.addEventListener("dblclick", () => {
+  clearTimeout(kittenClickTimer);
+  if (!kittenBg) kittenBg = true;
+  else kittenIdx = (kittenIdx + 1) % KITTEN_BGS.length;
+  saveKittenState();
   applyBackground();
 });

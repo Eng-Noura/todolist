@@ -439,11 +439,13 @@ body.light-mode .addDeadline {
   top: 0;
   left: 0;
   width: 100%;
-  height: 38vh;
-  min-height: 200px;
-  background: url('../images/bg-kitten.jpg') no-repeat center top / cover;
-  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  height: 40vh;
+  min-height: 220px;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 75% top;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
   z-index: -1;
 }
 .kittenBtn {
