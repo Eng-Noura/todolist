@@ -9,17 +9,20 @@ const filterCompleted = document.querySelector(".filterCompleted");
 const themeToggle = document.querySelector(".toggleTheme");
 const addBtn = document.querySelector(".addBtn");
 const addDeadline = document.querySelector(".addDeadline");
+const sortBtn = document.querySelector(".sortBtn");
 
 // state
 let tasks = [];
 let InputValue = "";
 let currentFilter = "all"; // all | active | completed
 let dragId = null;
+let sortDir = localStorage.getItem("todoSortDir") || "newest"; // newest | oldest
 
 // Initialize app
 (function init() {
   loadTasks();
   filterAll.classList.add("active-filter");
+  updateSortBtn();
   render();
   // refresh deadline colours (soon / overdue) every minute
   setInterval(() => {
@@ -46,13 +49,15 @@ function generateId() {
 // ── CRUD ─────────────────────────────────────────────────────────
 function addTask() {
   if (!InputValue) return;
-  // newest task goes to the top
-  tasks.unshift({
+  const newTask = {
     _id: generateId(),
     title: InputValue,
     completed: false,
     deadline: addDeadline.value || null,
-  });
+  };
+  // "newest first": new task on top, "oldest first": new task at the bottom
+  if (sortDir === "newest") tasks.unshift(newTask);
+  else tasks.push(newTask);
   saveTasks();
   render();
 }
@@ -94,14 +99,19 @@ function applyVisibleOrder(ids) {
   saveTasks();
 }
 
-function moveTask(id, dir) {
-  const ids = getVisibleTasks().map((t) => t._id);
-  const i = ids.indexOf(id);
-  const j = i + dir;
-  if (i < 0 || j < 0 || j >= ids.length) return;
-  [ids[i], ids[j]] = [ids[j], ids[i]];
-  applyVisibleOrder(ids);
+// Flip the order of ALL tasks (newest first <-> oldest first)
+function toggleSort() {
+  tasks.reverse();
+  sortDir = sortDir === "newest" ? "oldest" : "newest";
+  localStorage.setItem("todoSortDir", sortDir);
+  saveTasks();
+  updateSortBtn();
   render();
+}
+
+function updateSortBtn() {
+  sortBtn.textContent =
+    sortDir === "newest" ? "\u21C5 Newest first" : "\u21C5 Oldest first";
 }
 
 function setDeadline(id, value) {
@@ -125,7 +135,7 @@ function DisplayTasks(listOfTasks = tasks) {
   // Remove currently displayed task elements
   container.querySelectorAll(".task").forEach((el) => el.remove());
 
-  listOfTasks.forEach((task, index) => {
+  listOfTasks.forEach((task) => {
     let TaskElement = document.createElement("div");
     TaskElement.className = task.completed ? "task completed" : "task";
     TaskElement.setAttribute("data-id", task._id);
@@ -176,28 +186,16 @@ function DisplayTasks(listOfTasks = tasks) {
     wrap.append(deadlineEl, deadlineInput);
     body.append(taskTitle, wrap);
 
-    // arrows + delete
+    // delete
     let actions = document.createElement("div");
     actions.classList.add("taskActions");
-
-    let upBtn = document.createElement("button");
-    upBtn.classList.add("moveBtn", "moveUp");
-    upBtn.textContent = "\u25B2";
-    upBtn.title = "Move up";
-    upBtn.disabled = index === 0;
-
-    let downBtn = document.createElement("button");
-    downBtn.classList.add("moveBtn", "moveDown");
-    downBtn.textContent = "\u25BC";
-    downBtn.title = "Move down";
-    downBtn.disabled = index === listOfTasks.length - 1;
 
     let DeleteIcon = document.createElement("img");
     DeleteIcon.classList.add("deleteIcon");
     DeleteIcon.src = "./images/icon-cross.svg";
     DeleteIcon.alt = "delete";
 
-    actions.append(upBtn, downBtn, DeleteIcon);
+    actions.append(DeleteIcon);
 
     TaskElement.append(checkBox, body, actions);
     container.insertBefore(TaskElement, control);
@@ -256,9 +254,6 @@ container.addEventListener("click", (e) => {
     render();
   }
 
-  if (e.target.classList.contains("moveUp")) moveTask(id, -1);
-  if (e.target.classList.contains("moveDown")) moveTask(id, 1);
-
   if (e.target.classList.contains("deadline")) {
     const input = parent.querySelector(".deadlineInput");
     if (input.showPicker) input.showPicker();
@@ -306,6 +301,8 @@ container.addEventListener("dragend", () => {
   applyVisibleOrder(ids);
   render();
 });
+
+sortBtn.addEventListener("click", toggleSort);
 
 clearCompleted.addEventListener("click", () => {
   tasks = tasks.filter((t) => !t.completed);

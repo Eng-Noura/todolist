@@ -404,17 +404,6 @@ body.light-mode .addDeadline {
   gap: 6px;
   padding-right: 10px;
 }
-.moveBtn {
-  background: none;
-  border: none;
-  color: var(--Dark-Border);
-  cursor: pointer;
-  font-size: 12px;
-  padding: 4px;
-  border-radius: 3px;
-}
-.moveBtn:hover:not(:disabled) { color: var(--Primary-Bright-Blue); }
-.moveBtn:disabled { opacity: 0.25; cursor: default; }
 .taskActions .deleteIcon {
   position: static;
   flex-shrink: 0;
@@ -425,3 +414,21 @@ body.light-mode .addDeadline {
   .inputCheckBox { flex: 1 1 100%; }
   .addDeadline { flex: 1; }
 }
+
+/* === Global sort button === */
+.titleBtns {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sortBtn {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.sortBtn:hover { background: rgba(0, 0, 0, 0.55); }
