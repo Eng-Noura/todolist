@@ -10,12 +10,15 @@ const themeToggle = document.querySelector(".toggleTheme");
 const addBtn = document.querySelector(".addBtn");
 const addDeadline = document.querySelector(".addDeadline");
 const sortBtn = document.querySelector(".sortBtn");
+const kittenBtn = document.querySelector(".kittenBtn");
+const topBg = document.getElementById("topBg");
 
 // state
 let tasks = [];
 let InputValue = "";
 let currentFilter = "all"; // all | active | completed
 let dragId = null;
+let kittenBg = localStorage.getItem("todoKittenBg") === "1";
 let sortDir = localStorage.getItem("todoSortDir") || "newest"; // newest | oldest
 
 // Initialize app
@@ -23,6 +26,7 @@ let sortDir = localStorage.getItem("todoSortDir") || "newest"; // newest | oldes
   loadTasks();
   filterAll.classList.add("active-filter");
   updateSortBtn();
+  applyBackground();
   render();
   // refresh deadline colours (soon / overdue) every minute
   setInterval(() => {
@@ -336,19 +340,27 @@ function setActiveFilter(activeEl) {
   activeEl.classList.add("active-filter");
 }
 
-// ── Theme Toggle ─────────────────────────────────────────────────
+// ── Theme Toggle & Backgrounds ───────────────────────────────────
+function applyBackground() {
+  const light = document.body.classList.contains("light-mode");
+  topBg.className = kittenBg ? "bgKitten" : light ? "bgLight" : "bgDark";
+  kittenBtn.classList.toggle("active", kittenBg);
+}
+
 themeToggle.addEventListener("click", function () {
   document.body.classList.toggle("light-mode");
   const icon = document.getElementById("theme-icon");
-  const topBg = document.getElementById("topBg");
+  const light = document.body.classList.contains("light-mode");
 
-  if (document.body.classList.contains("light-mode")) {
-    icon.src = "./images/icon-moon.svg";
-    topBg.classList.replace("bgDark", "bgLight");
-    addBtn.classList.replace("btnDark", "btnLight");
-  } else {
-    icon.src = "./images/icon-sun.svg";
-    topBg.classList.replace("bgLight", "bgDark");
-    addBtn.classList.replace("btnLight", "btnDark");
-  }
+  icon.src = light ? "./images/icon-moon.svg" : "./images/icon-sun.svg";
+  addBtn.classList.remove("btnDark", "btnLight");
+  addBtn.classList.add(light ? "btnLight" : "btnDark");
+  applyBackground();
+});
+
+// Kittens background on/off (remembered)
+kittenBtn.addEventListener("click", () => {
+  kittenBg = !kittenBg;
+  localStorage.setItem("todoKittenBg", kittenBg ? "1" : "0");
+  applyBackground();
 });
