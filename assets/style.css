@@ -18,6 +18,12 @@
   --Dark-Text-hover: hsl(236, 33%, 92%);
   --Dark-Border: hsl(234, 11%, 52%);
   --Dark-Border2: hsl(237, 14%, 26%);
+
+  /** === Transparency of the boxes (0 = invisible, 1 = solid) === */
+  --box-alpha: 0.6;
+  --btn-alpha: 0.75;
+  --Dark-Box-A: hsl(235 24% 19% / var(--box-alpha));
+  --Light-Box-A: hsl(0 0% 100% / var(--box-alpha));
 }
 
 * {
@@ -94,10 +100,10 @@ body {
 }
 
 .btnDark{
-  background: var(--Primary-btn-Dark);
+  background: hsl(297 60% 30% / var(--btn-alpha));
 }
 .btnLight{
-  background: var(--Primary-btn-Light);
+  background: hsl(245 55% 47% / var(--btn-alpha));
 }
 .btn-press {
   animation: pressDownUp 0.2s ease;
@@ -439,8 +445,8 @@ body.light-mode .addDeadline {
   top: 0;
   left: 0;
   width: 100%;
-  height: 40vh;
-  min-height: 220px;
+  height: 45vh;
+  min-height: 240px;
   background-repeat: no-repeat;
   background-size: cover;
   background-position: 75% top;
@@ -469,4 +475,30 @@ body.light-mode .addDeadline {
 .kittenBtn.active {
   border-color: #fff;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+
+/* === Semi-transparent boxes (so the background image shows through) === */
+.addTask,
+.addDeadline,
+.boxContainer {
+  background-color: var(--Dark-Box-A);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.taskTitle,
+.taskBody .taskTitle {
+  background-color: transparent; /* the box behind it already has the colour */
+}
+body.light-mode .addTask,
+body.light-mode .addDeadline,
+body.light-mode .boxContainer {
+  background-color: var(--Light-Box-A);
+}
+body.light-mode .taskTitle,
+body.light-mode .taskBody .taskTitle {
+  background-color: transparent;
+}
+.addBtn {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }

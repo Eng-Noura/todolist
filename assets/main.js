@@ -20,10 +20,11 @@ let currentFilter = "all"; // all | active | completed
 let dragId = null;
 let kittenBg = localStorage.getItem("todoKittenBg") === "1";
 const KITTEN_BGS = [
-  { file: "kitten-bg-1.jpg", pos: "75% top" },
-  { file: "kitten-bg-2.jpg", pos: "75% top" },
-  { file: "kitten-bg-3.jpg", pos: "75% top" },
-  { file: "kitten-bg-4.jpg", pos: "80% top" },
+  // pos = "x% y%": a bigger y% moves the picture UP (shows lower parts of it)
+  { file: "kitten-bg-1.jpg", pos: "75% 35%" },
+  { file: "kitten-bg-2.jpg", pos: "75% 40%" },
+  { file: "kitten-bg-3.jpg", pos: "75% 35%" },
+  { file: "kitten-bg-4.jpg", pos: "80% 35%" },
 ];
 let kittenIdx =
   (parseInt(localStorage.getItem("todoKittenIdx"), 10) || 0) % KITTEN_BGS.length;
