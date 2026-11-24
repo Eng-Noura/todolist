@@ -8,20 +8,31 @@ const filterActive = document.querySelector(".filterActive");
 const filterCompleted = document.querySelector(".filterCompleted");
 const themeToggle = document.querySelector(".toggleTheme");
 const addBtn = document.querySelector(".addBtn");
+const addDeadline = document.querySelector(".addDeadline");
 
 // state
 let tasks = [];
 let InputValue = "";
+let currentFilter = "all"; // all | active | completed
+let dragId = null;
 
 // Initialize app
 (function init() {
   loadTasks();
-  DisplayTasks(tasks);
+  filterAll.classList.add("active-filter");
+  render();
+  // refresh deadline colours (soon / overdue) every minute
+  setInterval(() => {
+    if (!dragId) render();
+  }, 60000);
 })();
 
 // ── Storage helpers ──────────────────────────────────────────────
 function loadTasks() {
   tasks = JSON.parse(localStorage.getItem("todoTasks") || "[]");
+  tasks.forEach((t) => {
+    if (t.deadline === undefined) t.deadline = null;
+  });
 }
 
 function saveTasks() {
@@ -35,9 +46,15 @@ function generateId() {
 // ── CRUD ─────────────────────────────────────────────────────────
 function addTask() {
   if (!InputValue) return;
-  tasks.push({ _id: generateId(), title: InputValue, completed: false });
+  // newest task goes to the top
+  tasks.unshift({
+    _id: generateId(),
+    title: InputValue,
+    completed: false,
+    deadline: addDeadline.value || null,
+  });
   saveTasks();
-  DisplayTasks(tasks);
+  render();
 }
 
 function DeleteTask(id) {
@@ -51,6 +68,56 @@ function markCompleted(id) {
   saveTasks();
 }
 
+// ── Ordering helpers ─────────────────────────────────────────────
+function getVisibleTasks() {
+  if (currentFilter === "active") return tasks.filter((t) => !t.completed);
+  if (currentFilter === "completed") return tasks.filter((t) => t.completed);
+  return tasks;
+}
+
+function render() {
+  DisplayTasks(getVisibleTasks());
+}
+
+// Put the visible tasks in the given order, using the same "slots"
+// they already occupy in the full list (so hidden tasks stay put).
+function applyVisibleOrder(ids) {
+  const set = new Set(ids);
+  const slots = [];
+  tasks.forEach((t, i) => {
+    if (set.has(t._id)) slots.push(i);
+  });
+  const byId = Object.fromEntries(tasks.map((t) => [t._id, t]));
+  ids.forEach((id, k) => {
+    tasks[slots[k]] = byId[id];
+  });
+  saveTasks();
+}
+
+function moveTask(id, dir) {
+  const ids = getVisibleTasks().map((t) => t._id);
+  const i = ids.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  applyVisibleOrder(ids);
+  render();
+}
+
+function setDeadline(id, value) {
+  const task = tasks.find((t) => t._id === id);
+  if (task) task.deadline = value || null;
+  saveTasks();
+  render();
+}
+
+function formatDeadline(value) {
+  const d = new Date(value);
+  const opts = { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+  return d.toLocaleString([], opts);
+}
+
 // ── UI Functions ─────────────────────────────────────────────────
 function DisplayTasks(listOfTasks = tasks) {
   countRemainingTasks();
@@ -58,27 +125,81 @@ function DisplayTasks(listOfTasks = tasks) {
   // Remove currently displayed task elements
   container.querySelectorAll(".task").forEach((el) => el.remove());
 
-  listOfTasks.forEach((task) => {
+  listOfTasks.forEach((task, index) => {
     let TaskElement = document.createElement("div");
     TaskElement.className = task.completed ? "task completed" : "task";
     TaskElement.setAttribute("data-id", task._id);
+    TaskElement.draggable = true;
 
     let checkBox = document.createElement("input");
     checkBox.classList.add("checkAtTask");
     checkBox.type = "checkbox";
     checkBox.checked = task.completed;
 
+    // title + deadline
+    let body = document.createElement("div");
+    body.classList.add("taskBody");
+
     let taskTitle = document.createElement("p");
     taskTitle.classList.add("taskTitle");
     if (task.completed) taskTitle.classList.add("checked");
     taskTitle.textContent = task.title;
+
+    let wrap = document.createElement("div");
+    wrap.classList.add("deadlineWrap");
+
+    let deadlineEl = document.createElement("span");
+    deadlineEl.classList.add("deadline");
+    if (task.deadline) {
+      let text = "\u{1F4C5} " + formatDeadline(task.deadline);
+      const diff = new Date(task.deadline) - new Date();
+      if (task.completed) {
+        deadlineEl.classList.add("done");
+      } else if (diff < 0) {
+        deadlineEl.classList.add("overdue");
+        text += " \u00B7 Overdue";
+      } else if (diff < 24 * 60 * 60 * 1000) {
+        deadlineEl.classList.add("soon");
+      }
+      deadlineEl.textContent = text;
+    } else {
+      deadlineEl.classList.add("empty");
+      deadlineEl.textContent = "+ Add deadline";
+    }
+
+    let deadlineInput = document.createElement("input");
+    deadlineInput.type = "datetime-local";
+    deadlineInput.classList.add("deadlineInput");
+    deadlineInput.value = task.deadline || "";
+    deadlineInput.tabIndex = -1;
+
+    wrap.append(deadlineEl, deadlineInput);
+    body.append(taskTitle, wrap);
+
+    // arrows + delete
+    let actions = document.createElement("div");
+    actions.classList.add("taskActions");
+
+    let upBtn = document.createElement("button");
+    upBtn.classList.add("moveBtn", "moveUp");
+    upBtn.textContent = "\u25B2";
+    upBtn.title = "Move up";
+    upBtn.disabled = index === 0;
+
+    let downBtn = document.createElement("button");
+    downBtn.classList.add("moveBtn", "moveDown");
+    downBtn.textContent = "\u25BC";
+    downBtn.title = "Move down";
+    downBtn.disabled = index === listOfTasks.length - 1;
 
     let DeleteIcon = document.createElement("img");
     DeleteIcon.classList.add("deleteIcon");
     DeleteIcon.src = "./images/icon-cross.svg";
     DeleteIcon.alt = "delete";
 
-    TaskElement.append(checkBox, taskTitle, DeleteIcon);
+    actions.append(upBtn, downBtn, DeleteIcon);
+
+    TaskElement.append(checkBox, body, actions);
     container.insertBefore(TaskElement, control);
   });
 }
@@ -104,6 +225,7 @@ function handleAddTask() {
     addTask();
     InputValue = "";
     AddInput.value = "";
+    addDeadline.value = "";
     animateButton(addBtn);
   }
 }
@@ -126,35 +248,88 @@ container.addEventListener("click", (e) => {
 
   if (e.target.classList.contains("deleteIcon")) {
     DeleteTask(id);
-    DisplayTasks(tasks);
+    render();
   }
 
   if (e.target.classList.contains("checkAtTask")) {
     markCompleted(id);
-    DisplayTasks(tasks);
+    render();
   }
+
+  if (e.target.classList.contains("moveUp")) moveTask(id, -1);
+  if (e.target.classList.contains("moveDown")) moveTask(id, 1);
+
+  if (e.target.classList.contains("deadline")) {
+    const input = parent.querySelector(".deadlineInput");
+    if (input.showPicker) input.showPicker();
+    else input.focus();
+  }
+});
+
+container.addEventListener("change", (e) => {
+  if (!e.target.classList.contains("deadlineInput")) return;
+  const parent = e.target.closest(".task");
+  setDeadline(parent.getAttribute("data-id"), e.target.value);
+});
+
+// ── Drag & Drop ──────────────────────────────────────────────────
+container.addEventListener("dragstart", (e) => {
+  const t = e.target.closest ? e.target.closest(".task") : null;
+  if (!t) return;
+  dragId = t.getAttribute("data-id");
+  t.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", dragId);
+});
+
+container.addEventListener("dragover", (e) => {
+  if (!dragId) return;
+  e.preventDefault();
+  const over = e.target.closest(".task");
+  const dragging = container.querySelector(".task.dragging");
+  if (!over || !dragging || over === dragging) return;
+  const rect = over.getBoundingClientRect();
+  const after = e.clientY > rect.top + rect.height / 2;
+  container.insertBefore(dragging, after ? over.nextSibling : over);
+});
+
+container.addEventListener("drop", (e) => {
+  if (dragId) e.preventDefault();
+});
+
+container.addEventListener("dragend", () => {
+  if (!dragId) return;
+  const ids = [...container.querySelectorAll(".task")].map((el) =>
+    el.getAttribute("data-id")
+  );
+  dragId = null;
+  applyVisibleOrder(ids);
+  render();
 });
 
 clearCompleted.addEventListener("click", () => {
   tasks = tasks.filter((t) => !t.completed);
   saveTasks();
-  DisplayTasks(tasks);
+  render();
 });
 
 // ── Filters ──────────────────────────────────────────────────────
 filterAll.addEventListener("click", () => {
+  currentFilter = "all";
   setActiveFilter(filterAll);
-  DisplayTasks(tasks);
+  render();
 });
 
 filterActive.addEventListener("click", () => {
+  currentFilter = "active";
   setActiveFilter(filterActive);
-  DisplayTasks(tasks.filter((t) => !t.completed));
+  render();
 });
 
 filterCompleted.addEventListener("click", () => {
+  currentFilter = "completed";
   setActiveFilter(filterCompleted);
-  DisplayTasks(tasks.filter((t) => t.completed));
+  render();
 });
 
 function setActiveFilter(activeEl) {

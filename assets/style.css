@@ -332,3 +332,96 @@ body.light-mode .checkAtTask {
   }
 }
 
+
+
+/* === New features: deadline, arrows, drag & drop === */
+.addDeadline {
+  width: 190px;
+  height: 40px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 3px;
+  background-color: var(--Dark-Box);
+  color: #fff;
+  color-scheme: dark;
+  font-size: 14px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+body.light-mode .addDeadline {
+  background-color: #fff;
+  color: var(--Light-Text);
+  color-scheme: light;
+}
+
+.task { cursor: grab; }
+.task.dragging { opacity: 0.4; }
+
+.taskBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.taskBody .taskTitle {
+  flex: none;
+  height: auto;
+  min-height: 40px;
+  padding-block: 8px;
+  padding-right: 8px;
+  word-break: break-word;
+}
+
+.deadlineWrap {
+  position: relative;
+  padding-left: 55px;
+}
+.deadline {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--Dark-Border);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.deadline:hover { color: var(--Primary-Bright-Blue); }
+.deadline.empty { opacity: 0.6; }
+.deadline.soon { color: #f5a623; }
+.deadline.overdue { color: #ff5c5c; font-weight: bold; }
+.deadline.done { opacity: 0.5; text-decoration: line-through; }
+.deadlineInput {
+  position: absolute;
+  left: 55px;
+  top: 100%;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.taskActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 10px;
+}
+.moveBtn {
+  background: none;
+  border: none;
+  color: var(--Dark-Border);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
+  border-radius: 3px;
+}
+.moveBtn:hover:not(:disabled) { color: var(--Primary-Bright-Blue); }
+.moveBtn:disabled { opacity: 0.25; cursor: default; }
+.taskActions .deleteIcon {
+  position: static;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .add { flex-wrap: wrap; }
+  .inputCheckBox { flex: 1 1 100%; }
+  .addDeadline { flex: 1; }
+}
